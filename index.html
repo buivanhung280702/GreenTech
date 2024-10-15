@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .device {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kết nối WebSocket</h1>
+  
+  <div class="device" name="light">
+    <h2>Đèn</h2>
+    <button onclick="toggleDevice('light', 'on')">Bật</button>
+    <button onclick="toggleDevice('light', 'off')">Tắt</button>
+    <p id="lightStatus">Trạng thái: chưa được cập nhật</p>
+  </div>
+
+  <div class="device" name="siren">
+    <h2>Còi</h2>
+    <button onclick="toggleDevice('siren', 'on')">Bật</button>
+    <button onclick="toggleDevice('siren', 'off')">Tắt</button>
+    <p id="sirenStatus">Trạng thái: chưa được cập nhật</p>
+  </div>
+
+  <div class="device" name="fan">
+    <h2>Quạt</h2>
+    <button onclick="toggleDevice('fan', 'on')">Bật</button>
+    <button onclick="toggleDevice('fan', 'off')">Tắt</button>
+    <p id="fanStatus">Trạng thái: chưa được cập nhật</p>
+  </div>
+
+  <script>
+    const ws = new WebSocket('ws://192.168.0.123:8080'); // Địa chỉ WebSocket server của bạn
+    const deviceStatus = {
+    light: 'null',  // Giá trị mặc định
+    siren: 'null',
+    fan: 'null'
+  };
+    ws.onmessage = (event) => {
+
+      const data = JSON.parse(event.data);
+      console.log(data);
+      if (Array.isArray(data)){
+        data.forEach((device) =>{
+          toggleDevice(device.name, device.status);
+        })
+      }else{
+        updateStatus(data.name,data.status);
+      }
+      };
+    
+    function sendtoServer(name,status) {
+      const message = JSON.stringify({ name: name, status: status });
+      ws.send(message)
+    }
+    function toggleDevice(name, status) {
+      if (deviceStatus[name] !== status) {
+        deviceStatus[name] = status; // Cập nhật trạng thái hiện tại
+        updateStatus(name,status);
+        sendtoServer(name, status); // Gửi trạng thái đến server
+    }
+  }
+    function updateStatus(name,status) {
+      const statusElement = document.getElementById(`${name}Status`);
+      statusElement.innerText = `Trạng thái: đang ${status === 'on' ? 'bật' : 'tắt'}`;
+    }
+  </script>
+</body>
+</html>
+
