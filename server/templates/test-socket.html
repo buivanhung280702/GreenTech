@@ -1,0 +1,10 @@
+<script src="https://cdn.socket.io/4.1.3/socket.io.min.js"></script>
+<script type="text/javascript">
+    var socket = io.connect('http://localhost:5000');
+
+    // Lắng nghe sự kiện 'device_status_updated'
+    socket.on('device_status_updated', function(data) {
+        console.log("Device " + data.device_id + " status updated to " + data.status);
+        // Bạn có thể thực hiện cập nhật UI tại đây
+    });
+</script>
