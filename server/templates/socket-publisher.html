@@ -1,0 +1,25 @@
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+<script>
+    const socket = io('http://localhost:5000');
+    const sensorData = {
+        name: "node1",
+        status: "on",
+        temp: "25",
+        humi: "60",
+        soil: "45",
+        lux: "500"
+    };
+    
+    for (let i = 0; i < 100; i++) {
+        socket.emit('sensor_data', sensorData);
+    }
+    socket.on('sensor_data_received', (data) => {
+        console.log(data.message);
+        console.log("Sensor data ID: ", data.id);
+    });
+    
+    socket.on('error', (error) => {
+        console.log("Error: ", error.message);
+    });
+</script>

@@ -11,7 +11,7 @@ import datetime
 
 app = Flask(__name__)
 CORS(app)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/greentech"
+app.config["MONGO_URI"] = "mongodb+srv://bhung7001:Hung28072002@cluster0.s0le1.mongodb.net/greentech?retryWrites=true&w=majority&appName=Cluster0"
 app.config["SECRET_KEY"] = 'your_secret_key'
 
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -21,6 +21,7 @@ bcrypt = Bcrypt(app)
 
 users_collection = mongo.db.users
 devices_collection = mongo.db.devices
+sensor_data_collection = mongo.db.sensor_data
 
 
 @app.route('/register', methods=['POST'])
@@ -133,6 +134,43 @@ def update_device(current_user, device_id):
     socketio.emit('device_status_updated', {'device_id': device_id, 'status': new_status})
     
     return jsonify({'message': 'Device updated!'}), 200
+
+
+@app.route('/sensor-data', methods=['GET'])
+def get_sensor_data():
+    sensor_data_cursor = sensor_data_collection.find()
+    
+    result = []
+    for data in sensor_data_cursor:
+        data['_id'] = str(data['_id'])
+        result.append(data)
+    
+    return jsonify(result), 200
+
+
+@socketio.on('sensor_data')
+def handle_sensor_data(data):
+    try:
+        if 'name' not in data or 'status' not in data or 'temp' not in data or 'humi' not in data:
+            emit('error', {'message': 'Missing required fields.'})
+            return
+        
+        sensor_data = {
+            'name': data['name'],
+            'status': data['status'],
+            'temp': data['temp'],
+            'humi': data['humi'],
+            'soil': data.get('soil', None),
+            'lux': data.get('lux', None),
+            'timestamp': datetime.datetime.utcnow()
+        }
+
+        sensor_data_id = sensor_data_collection.insert_one(sensor_data).inserted_id
+
+        emit('sensor_data_received', {'message': 'Sensor data added', 'id': str(sensor_data_id)})
+
+    except Exception as e:
+        emit('error', {'message': str(e)})
 
 
 if __name__ == '__main__':
